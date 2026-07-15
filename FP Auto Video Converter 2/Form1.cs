@@ -189,6 +189,8 @@ namespace FP_Auto_Video_Converter_2
                     "\n\n -scaleN - Зняти галочку \"Зменшити роздільну здатність до\"." +
                     "\n\n -crf33 - Задати CRF=33 (або інше число)." +
                     "\n\n -preset4 - Задати preset=faster (або інший, число до 10)." +
+                    "\n\n -gpuY - Поставити галочку \"Використовувати GPU (NVIDIA NVENC)\"." +
+                    "\n\n -gpuN - Зняти галочку \"Використовувати GPU (NVIDIA NVENC)\"." +
                     "\n\n -clearResolution1080 - Очистити зі списку всі файли менші за 1080 по меншій стороні (або інше число)." +
                     "\n\n -clearBitrate10 - Очистити зі списку всі файли бітрейтом менше 10 мегабіт  (або інше число)." +
                     "\n\n -clearH265 - Очистити зі списку всі файли що вже в кодеку H265 (HEVC)." +
@@ -234,6 +236,10 @@ namespace FP_Auto_Video_Converter_2
             if (getArgument("-preset*", out int preset))
                 if (preset <= trackBarPreset.Maximum && preset >= trackBarPreset.Minimum)
                     trackBarPreset.Value = preset;
+            if (isArgument("-gpuY"))
+                checkBoxUseGpu.Checked = true;
+            if (isArgument("-gpuN"))
+                checkBoxUseGpu.Checked = false;
 
 
             // Перевірка, чи є адреса папки в аргументах
@@ -777,6 +783,7 @@ namespace FP_Auto_Video_Converter_2
             checkBoxSkipIfBigger.Enabled = active;
             textBoxScaleDownSmallerSide.Enabled = active;
             checkBoxScaleDown.Enabled = active;
+            checkBoxUseGpu.Enabled = active;
             buttonExit.Enabled = active;
             if (active)
             {
@@ -874,6 +881,8 @@ namespace FP_Auto_Video_Converter_2
                 log("Збір даних...");
                 int crf = trackBarCRF.Value;
                 getPresetInfo(trackBarPreset.Value, out string preset, out string description);
+                bool useGpu = checkBoxUseGpu.Checked;
+                string gpuPreset = getGpuPreset(trackBarPreset.Value);
                 bool reduceFramerate = checkBoxReduceFramerate.Checked;
                 int.TryParse(textBoxReduceFramerateValue.Text, out int reduceFramerateValue);
                 if (reduceFramerateValue < 1 || reduceFramerateValue > 240)
@@ -891,6 +900,7 @@ namespace FP_Auto_Video_Converter_2
                 }
 
                 log($"CRF = {crf}");
+                log($"useGpu = {useGpu}");
                 if(reduceFramerate)
                     log($"reduceFramerateValue = {reduceFramerateValue}");
                 log($"skipBigger = {skipBigger}");
@@ -901,7 +911,7 @@ namespace FP_Auto_Video_Converter_2
                 stop = false;
                 buttonStop.Enabled = true;
                 convertTime.Start();
-                workingThread = new Thread(() => runConvertAsync(crf, preset, reduceFramerate, reduceFramerateValue, skipBigger, downscale, downscaleSmallerSide));
+                workingThread = new Thread(() => runConvertAsync(crf, preset, useGpu, gpuPreset, reduceFramerate, reduceFramerateValue, skipBigger, downscale, downscaleSmallerSide));
                 workingThread.Start();
             }
             catch (Exception ex)
@@ -910,7 +920,7 @@ namespace FP_Auto_Video_Converter_2
             }
         }
 
-        private void runConvertAsync(int crf, string preset, bool reduceFramerate, int reduceFramerateValue, bool skipBigger, bool downscale, double targetSmallerSide)
+        private void runConvertAsync(int crf, string preset, bool useGpu, string gpuPreset, bool reduceFramerate, int reduceFramerateValue, bool skipBigger, bool downscale, double targetSmallerSide)
         {
             try
             {
@@ -963,7 +973,11 @@ namespace FP_Auto_Video_Converter_2
                             resolution = $"-vf \"scale={newWidth}:{newHeight}\" ";
                         }
                         string framerate = reduceFramerate? $"-r {reduceFramerateValue} " : "";
-                        string arguments = $"-i \"{filePath}\" -c:v libx265 -preset {preset} -crf {crf} {framerate}{resolution}-progress pipe:1 \"{tmpfile}\"";
+                        string hwaccel = useGpu ? "-hwaccel cuda " : "";
+                        string videoCodec = useGpu
+                            ? $"-c:v hevc_nvenc -preset {gpuPreset} -tune hq -rc vbr -cq {crf} -b:v 0"
+                            : $"-c:v libx265 -preset {preset} -crf {crf}";
+                        string arguments = $"{hwaccel}-i \"{filePath}\" {videoCodec} {framerate}{resolution}-progress pipe:1 \"{tmpfile}\"";
                         string exe = "ffmpeg.exe";
                         log(exe + " " + arguments);
                         ffmpeg = new Process();
@@ -1259,6 +1273,23 @@ namespace FP_Auto_Video_Converter_2
             labelPresetMeaning.Text = description;
         }
 
+        private void checkBoxUseGpu_CheckedChanged(object sender, EventArgs e)
+        {
+            labelEncoderMeaning.Text = checkBoxUseGpu.Checked
+                ? "GPU (hevc_nvenc): значно швидше, потребує NVIDIA GPU з підтримкою NVENC."
+                : "CPU (libx265): повільніше, але без обмежень до якості/сумісності.";
+        }
+
+        // NVENC-пресети (p1..p7) не збігаються з x264/x265-пресетами.
+        // Мапимо той самий повзунок 0..9 пропорційно на p1 (найшвидший) .. p7 (найповільніший).
+        string getGpuPreset(int sliderValue)
+        {
+            int max = trackBarPreset.Maximum;
+            int nvencLevel = 1 + (int)Math.Round(sliderValue * 6.0 / max);
+            nvencLevel = Math.Max(1, Math.Min(7, nvencLevel));
+            return "p" + nvencLevel;
+        }
+
         private void buttonClearBacups_Click(object sender, EventArgs e)
         {
             DialogResult result = MessageBox.Show(
@@ -1414,7 +1445,7 @@ namespace FP_Auto_Video_Converter_2
 
         private void buttonAbout_Click(object sender, EventArgs e)
         {
-            string description = "FP AutoVideoConverter 2.5" +
+            string description = "FP AutoVideoConverter 2.6" +
                 "\n" +
                 "\nЦя програма дозволяє автоматизувати процес стиснення відеофайлів у кодек H.265 (HEVC), " +
                 "надаючи зручний інтерфейс для пакетного стиснення великої кількості відео." +
@@ -1557,4 +1588,10 @@ namespace FP_Auto_Video_Converter_2
 - Заповнено інформацію про файл
 - Допрацьована обробка помилок - програма не вилітає якщо помилка обробки файлу
 - Допрацьовано отримання формату файлу - не виникає помилки якщо в відео файлі присутні кілька потоків відео
+
+2.6
+- Додано підтримку апаратного кодування NVIDIA NVENC (GPU) як альтернативу CPU (libx265)
+- В інтерфейсі додано перемикач "Використовувати GPU (NVIDIA NVENC)"
+- Додано аргументи командного рядка -gpuY / -gpuN
+- Оновлено ffmpeg.exe до версії 8.1.2 (gyan.dev full build) - стара збірка 2016 року не мала NVENC/CUDA
  */

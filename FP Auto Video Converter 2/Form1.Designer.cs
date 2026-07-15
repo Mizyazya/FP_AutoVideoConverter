@@ -76,6 +76,9 @@
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.labelCrfMeaning = new System.Windows.Forms.Label();
             this.trackBarCRF = new System.Windows.Forms.TrackBar();
+            this.groupBoxEncoder = new System.Windows.Forms.GroupBox();
+            this.labelEncoderMeaning = new System.Windows.Forms.Label();
+            this.checkBoxUseGpu = new System.Windows.Forms.CheckBox();
             this.label1 = new System.Windows.Forms.Label();
             this.buttonStop = new System.Windows.Forms.Button();
             this.buttonStart = new System.Windows.Forms.Button();
@@ -93,6 +96,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.trackBarPreset)).BeginInit();
             this.groupBox2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.trackBarCRF)).BeginInit();
+            this.groupBoxEncoder.SuspendLayout();
             this.panel2.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -281,6 +285,7 @@
             this.panel1.Controls.Add(this.checkBoxSkipIfBigger);
             this.panel1.Controls.Add(this.groupBox3);
             this.panel1.Controls.Add(this.groupBox2);
+            this.panel1.Controls.Add(this.groupBoxEncoder);
             this.panel1.Controls.Add(this.label1);
             this.panel1.Controls.Add(this.buttonStop);
             this.panel1.Controls.Add(this.buttonStart);
@@ -624,7 +629,41 @@
             this.trackBarCRF.TabIndex = 10;
             this.trackBarCRF.Value = 30;
             this.trackBarCRF.ValueChanged += new System.EventHandler(this.trackBarCRF_ValueChanged);
-            // 
+            //
+            // groupBoxEncoder
+            //
+            this.groupBoxEncoder.Controls.Add(this.labelEncoderMeaning);
+            this.groupBoxEncoder.Controls.Add(this.checkBoxUseGpu);
+            this.groupBoxEncoder.Location = new System.Drawing.Point(16, 530);
+            this.groupBoxEncoder.Name = "groupBoxEncoder";
+            this.groupBoxEncoder.Size = new System.Drawing.Size(331, 83);
+            this.groupBoxEncoder.TabIndex = 25;
+            this.groupBoxEncoder.TabStop = false;
+            this.groupBoxEncoder.Text = "Кодування";
+            this.toolTip1.SetToolTip(this.groupBoxEncoder, "GPU (NVENC) працює значно швидше за CPU, ціною трохи гіршого стиснення при однак" +
+    "овій якості. Якщо GPU недоступне або виникає помилка - вимкніть цю опцію.");
+            //
+            // checkBoxUseGpu
+            //
+            this.checkBoxUseGpu.Location = new System.Drawing.Point(9, 19);
+            this.checkBoxUseGpu.Name = "checkBoxUseGpu";
+            this.checkBoxUseGpu.Size = new System.Drawing.Size(316, 24);
+            this.checkBoxUseGpu.TabIndex = 0;
+            this.checkBoxUseGpu.Text = "Використовувати GPU (NVIDIA NVENC)";
+            this.checkBoxUseGpu.UseVisualStyleBackColor = true;
+            this.checkBoxUseGpu.CheckedChanged += new System.EventHandler(this.checkBoxUseGpu_CheckedChanged);
+            //
+            // labelEncoderMeaning
+            //
+            this.labelEncoderMeaning.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.labelEncoderMeaning.ForeColor = System.Drawing.SystemColors.GrayText;
+            this.labelEncoderMeaning.Location = new System.Drawing.Point(6, 46);
+            this.labelEncoderMeaning.Name = "labelEncoderMeaning";
+            this.labelEncoderMeaning.Size = new System.Drawing.Size(319, 32);
+            this.labelEncoderMeaning.TabIndex = 1;
+            this.labelEncoderMeaning.Text = "CPU: повільніше, але без обмежень до якості/сумісності.";
+            this.labelEncoderMeaning.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+            //
             // label1
             // 
             this.label1.AutoSize = true;
@@ -699,7 +738,7 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MinimumSize = new System.Drawing.Size(1298, 871);
             this.Name = "Form1";
-            this.Text = "FP AutoVideoConverter 2.5";
+            this.Text = "FP AutoVideoConverter 2.6";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.Load += new System.EventHandler(this.Form1_Load);
             this.DragDrop += new System.Windows.Forms.DragEventHandler(this.Form1_DragDrop);
@@ -720,6 +759,7 @@
             this.groupBox2.ResumeLayout(false);
             this.groupBox2.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.trackBarCRF)).EndInit();
+            this.groupBoxEncoder.ResumeLayout(false);
             this.panel2.ResumeLayout(false);
             this.ResumeLayout(false);
 
@@ -753,6 +793,9 @@
         private System.Windows.Forms.Panel panel3;
         private System.Windows.Forms.CheckBox checkBoxScaleDown;
         private System.Windows.Forms.TextBox textBoxScaleDownSmallerSide;
+        private System.Windows.Forms.GroupBox groupBoxEncoder;
+        private System.Windows.Forms.CheckBox checkBoxUseGpu;
+        private System.Windows.Forms.Label labelEncoderMeaning;
         private System.Windows.Forms.Button buttonClearBacups;
         private System.Windows.Forms.ToolTip toolTip1;
         private System.Windows.Forms.Button buttonRemoveLessPx;
