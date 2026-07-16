@@ -7,7 +7,7 @@
     <ProjectGuid>{31A0748C-2E9A-4E67-B5E8-643C68D8E320}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <RootNamespace>FP_Auto_Video_Converter_2</RootNamespace>
-    <AssemblyName>FP Auto Video Converter 2.6</AssemblyName>
+    <AssemblyName>FP Auto Video Converter 2.7</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
@@ -52,6 +52,7 @@
     <Compile Include="Form1.Designer.cs">
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
+    <Compile Include="EncoderSettings.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Form1.resx">

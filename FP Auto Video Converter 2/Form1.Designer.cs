@@ -78,7 +78,9 @@
             this.trackBarCRF = new System.Windows.Forms.TrackBar();
             this.groupBoxEncoder = new System.Windows.Forms.GroupBox();
             this.labelEncoderMeaning = new System.Windows.Forms.Label();
-            this.checkBoxUseGpu = new System.Windows.Forms.CheckBox();
+            this.radioButtonCpu = new System.Windows.Forms.RadioButton();
+            this.radioButtonNvenc = new System.Windows.Forms.RadioButton();
+            this.radioButtonQsv = new System.Windows.Forms.RadioButton();
             this.label1 = new System.Windows.Forms.Label();
             this.buttonStop = new System.Windows.Forms.Button();
             this.buttonStart = new System.Windows.Forms.Button();
@@ -292,12 +294,12 @@
             this.panel1.Dock = System.Windows.Forms.DockStyle.Right;
             this.panel1.Location = new System.Drawing.Point(1171, 0);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(361, 904);
+            this.panel1.Size = new System.Drawing.Size(361, 954);
             this.panel1.TabIndex = 3;
             // 
             // textBoxReduceFramerateValue
             // 
-            this.textBoxReduceFramerateValue.Location = new System.Drawing.Point(259, 224);
+            this.textBoxReduceFramerateValue.Location = new System.Drawing.Point(259, 357);
             this.textBoxReduceFramerateValue.Name = "textBoxReduceFramerateValue";
             this.textBoxReduceFramerateValue.Size = new System.Drawing.Size(53, 22);
             this.textBoxReduceFramerateValue.TabIndex = 23;
@@ -313,7 +315,7 @@
             this.groupBox1.Controls.Add(this.buttonRemoveLessMBit);
             this.groupBox1.Controls.Add(this.buttonClearSelected);
             this.groupBox1.Controls.Add(this.buttonRemoveH265);
-            this.groupBox1.Location = new System.Drawing.Point(16, 294);
+            this.groupBox1.Location = new System.Drawing.Point(16, 427);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Size = new System.Drawing.Size(331, 127);
             this.groupBox1.TabIndex = 22;
@@ -420,7 +422,7 @@
             this.panel3.Controls.Add(this.labelStats);
             this.panel3.Controls.Add(this.buttonOpenRecycle);
             this.panel3.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.panel3.Location = new System.Drawing.Point(0, 623);
+            this.panel3.Location = new System.Drawing.Point(0, 673);
             this.panel3.Name = "panel3";
             this.panel3.Size = new System.Drawing.Size(361, 281);
             this.panel3.TabIndex = 16;
@@ -505,7 +507,7 @@
             // 
             // textBoxScaleDownSmallerSide
             // 
-            this.textBoxScaleDownSmallerSide.Location = new System.Drawing.Point(264, 253);
+            this.textBoxScaleDownSmallerSide.Location = new System.Drawing.Point(264, 386);
             this.textBoxScaleDownSmallerSide.Name = "textBoxScaleDownSmallerSide";
             this.textBoxScaleDownSmallerSide.Size = new System.Drawing.Size(79, 22);
             this.textBoxScaleDownSmallerSide.TabIndex = 18;
@@ -516,7 +518,7 @@
             // 
             this.checkBoxScaleDown.Checked = true;
             this.checkBoxScaleDown.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBoxScaleDown.Location = new System.Drawing.Point(21, 246);
+            this.checkBoxScaleDown.Location = new System.Drawing.Point(21, 379);
             this.checkBoxScaleDown.Name = "checkBoxScaleDown";
             this.checkBoxScaleDown.Size = new System.Drawing.Size(267, 40);
             this.checkBoxScaleDown.TabIndex = 17;
@@ -529,7 +531,7 @@
             // 
             this.checkBoxReduceFramerate.Checked = true;
             this.checkBoxReduceFramerate.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBoxReduceFramerate.Location = new System.Drawing.Point(21, 217);
+            this.checkBoxReduceFramerate.Location = new System.Drawing.Point(21, 350);
             this.checkBoxReduceFramerate.Name = "checkBoxReduceFramerate";
             this.checkBoxReduceFramerate.Size = new System.Drawing.Size(305, 40);
             this.checkBoxReduceFramerate.TabIndex = 15;
@@ -541,7 +543,7 @@
             // 
             this.checkBoxSkipIfBigger.Checked = true;
             this.checkBoxSkipIfBigger.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.checkBoxSkipIfBigger.Location = new System.Drawing.Point(21, 188);
+            this.checkBoxSkipIfBigger.Location = new System.Drawing.Point(21, 321);
             this.checkBoxSkipIfBigger.Name = "checkBoxSkipIfBigger";
             this.checkBoxSkipIfBigger.Size = new System.Drawing.Size(330, 40);
             this.checkBoxSkipIfBigger.TabIndex = 14;
@@ -555,7 +557,7 @@
             this.groupBox3.Controls.Add(this.labelPresetMeaning);
             this.groupBox3.Controls.Add(this.trackBarPreset);
             this.groupBox3.Controls.Add(this.labelPresetName);
-            this.groupBox3.Location = new System.Drawing.Point(16, 99);
+            this.groupBox3.Location = new System.Drawing.Point(16, 232);
             this.groupBox3.Name = "groupBox3";
             this.groupBox3.Size = new System.Drawing.Size(331, 80);
             this.groupBox3.TabIndex = 13;
@@ -600,7 +602,7 @@
             // 
             this.groupBox2.Controls.Add(this.labelCrfMeaning);
             this.groupBox2.Controls.Add(this.trackBarCRF);
-            this.groupBox2.Location = new System.Drawing.Point(16, 10);
+            this.groupBox2.Location = new System.Drawing.Point(16, 143);
             this.groupBox2.Name = "groupBox2";
             this.groupBox2.Size = new System.Drawing.Size(331, 83);
             this.groupBox2.TabIndex = 11;
@@ -633,34 +635,61 @@
             // groupBoxEncoder
             //
             this.groupBoxEncoder.Controls.Add(this.labelEncoderMeaning);
-            this.groupBoxEncoder.Controls.Add(this.checkBoxUseGpu);
-            this.groupBoxEncoder.Location = new System.Drawing.Point(16, 530);
+            this.groupBoxEncoder.Controls.Add(this.radioButtonQsv);
+            this.groupBoxEncoder.Controls.Add(this.radioButtonNvenc);
+            this.groupBoxEncoder.Controls.Add(this.radioButtonCpu);
+            this.groupBoxEncoder.Location = new System.Drawing.Point(16, 10);
             this.groupBoxEncoder.Name = "groupBoxEncoder";
-            this.groupBoxEncoder.Size = new System.Drawing.Size(331, 83);
+            this.groupBoxEncoder.Size = new System.Drawing.Size(331, 123);
             this.groupBoxEncoder.TabIndex = 25;
             this.groupBoxEncoder.TabStop = false;
             this.groupBoxEncoder.Text = "Кодування";
-            this.toolTip1.SetToolTip(this.groupBoxEncoder, "GPU (NVENC) працює значно швидше за CPU, ціною трохи гіршого стиснення при однак" +
-    "овій якості. Якщо GPU недоступне або виникає помилка - вимкніть цю опцію.");
+            this.toolTip1.SetToolTip(this.groupBoxEncoder, "GPU працює значно швидше за CPU. Показуються лише ті варіанти, які реально " +
+    "доступні на цьому комп\'ютері.");
             //
-            // checkBoxUseGpu
+            // radioButtonCpu
             //
-            this.checkBoxUseGpu.Location = new System.Drawing.Point(9, 19);
-            this.checkBoxUseGpu.Name = "checkBoxUseGpu";
-            this.checkBoxUseGpu.Size = new System.Drawing.Size(316, 24);
-            this.checkBoxUseGpu.TabIndex = 0;
-            this.checkBoxUseGpu.Text = "Використовувати GPU (NVIDIA NVENC)";
-            this.checkBoxUseGpu.UseVisualStyleBackColor = true;
-            this.checkBoxUseGpu.CheckedChanged += new System.EventHandler(this.checkBoxUseGpu_CheckedChanged);
+            this.radioButtonCpu.Checked = true;
+            this.radioButtonCpu.Location = new System.Drawing.Point(9, 19);
+            this.radioButtonCpu.Name = "radioButtonCpu";
+            this.radioButtonCpu.Size = new System.Drawing.Size(316, 24);
+            this.radioButtonCpu.TabIndex = 0;
+            this.radioButtonCpu.TabStop = true;
+            this.radioButtonCpu.Text = "CPU (libx265)";
+            this.radioButtonCpu.UseVisualStyleBackColor = true;
+            this.radioButtonCpu.CheckedChanged += new System.EventHandler(this.radioButtonEncoder_CheckedChanged);
+            //
+            // radioButtonNvenc
+            //
+            this.radioButtonNvenc.Location = new System.Drawing.Point(9, 42);
+            this.radioButtonNvenc.Name = "radioButtonNvenc";
+            this.radioButtonNvenc.Size = new System.Drawing.Size(316, 24);
+            this.radioButtonNvenc.TabIndex = 1;
+            this.radioButtonNvenc.Text = "NVIDIA GPU (NVENC)";
+            this.radioButtonNvenc.UseVisualStyleBackColor = true;
+            this.radioButtonNvenc.Visible = false;
+            this.radioButtonNvenc.CheckedChanged += new System.EventHandler(this.radioButtonEncoder_CheckedChanged);
+            //
+            // radioButtonQsv
+            //
+            this.radioButtonQsv.Location = new System.Drawing.Point(9, 65);
+            this.radioButtonQsv.Name = "radioButtonQsv";
+            this.radioButtonQsv.Size = new System.Drawing.Size(316, 24);
+            this.radioButtonQsv.TabIndex = 2;
+            this.radioButtonQsv.Text = "Intel GPU (QSV)";
+            this.radioButtonQsv.UseVisualStyleBackColor = true;
+            this.radioButtonQsv.Visible = false;
+            this.radioButtonQsv.CheckedChanged += new System.EventHandler(this.radioButtonEncoder_CheckedChanged);
             //
             // labelEncoderMeaning
             //
+            this.labelEncoderMeaning.AutoSize = false;
             this.labelEncoderMeaning.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.labelEncoderMeaning.ForeColor = System.Drawing.SystemColors.GrayText;
-            this.labelEncoderMeaning.Location = new System.Drawing.Point(6, 46);
+            this.labelEncoderMeaning.Location = new System.Drawing.Point(6, 88);
             this.labelEncoderMeaning.Name = "labelEncoderMeaning";
             this.labelEncoderMeaning.Size = new System.Drawing.Size(319, 32);
-            this.labelEncoderMeaning.TabIndex = 1;
+            this.labelEncoderMeaning.TabIndex = 3;
             this.labelEncoderMeaning.Text = "CPU: повільніше, але без обмежень до якості/сумісності.";
             this.labelEncoderMeaning.TextAlign = System.Drawing.ContentAlignment.TopCenter;
             //
@@ -669,7 +698,7 @@
             this.label1.AutoSize = true;
             this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.label1.ForeColor = System.Drawing.SystemColors.GrayText;
-            this.label1.Location = new System.Drawing.Point(18, 500);
+            this.label1.Location = new System.Drawing.Point(18, 633);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(313, 32);
             this.label1.TabIndex = 9;
@@ -681,7 +710,7 @@
             // 
             this.buttonStop.Enabled = false;
             this.buttonStop.Image = global::FP_Auto_Video_Converter_2.Properties.Resources.stop;
-            this.buttonStop.Location = new System.Drawing.Point(275, 440);
+            this.buttonStop.Location = new System.Drawing.Point(275, 573);
             this.buttonStop.Name = "buttonStop";
             this.buttonStop.Size = new System.Drawing.Size(74, 57);
             this.buttonStop.TabIndex = 7;
@@ -694,7 +723,7 @@
             // 
             this.buttonStart.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.buttonStart.Image = global::FP_Auto_Video_Converter_2.Properties.Resources.play;
-            this.buttonStart.Location = new System.Drawing.Point(18, 440);
+            this.buttonStart.Location = new System.Drawing.Point(18, 573);
             this.buttonStart.Name = "buttonStart";
             this.buttonStart.Size = new System.Drawing.Size(251, 57);
             this.buttonStart.TabIndex = 3;
@@ -730,15 +759,15 @@
             this.AllowDrop = true;
             this.AutoScaleDimensions = new System.Drawing.SizeF(120F, 120F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
-            this.ClientSize = new System.Drawing.Size(1532, 904);
+            this.ClientSize = new System.Drawing.Size(1532, 954);
             this.Controls.Add(this.splitContainer1);
             this.Controls.Add(this.panel2);
             this.Controls.Add(this.panel1);
             this.Font = new System.Drawing.Font("Microsoft Sans Serif", 7.8F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
-            this.MinimumSize = new System.Drawing.Size(1298, 871);
+            this.MinimumSize = new System.Drawing.Size(1298, 921);
             this.Name = "Form1";
-            this.Text = "FP AutoVideoConverter 2.6";
+            this.Text = "FP AutoVideoConverter 2.7";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.Load += new System.EventHandler(this.Form1_Load);
             this.DragDrop += new System.Windows.Forms.DragEventHandler(this.Form1_DragDrop);
@@ -794,7 +823,9 @@
         private System.Windows.Forms.CheckBox checkBoxScaleDown;
         private System.Windows.Forms.TextBox textBoxScaleDownSmallerSide;
         private System.Windows.Forms.GroupBox groupBoxEncoder;
-        private System.Windows.Forms.CheckBox checkBoxUseGpu;
+        private System.Windows.Forms.RadioButton radioButtonCpu;
+        private System.Windows.Forms.RadioButton radioButtonNvenc;
+        private System.Windows.Forms.RadioButton radioButtonQsv;
         private System.Windows.Forms.Label labelEncoderMeaning;
         private System.Windows.Forms.Button buttonClearBacups;
         private System.Windows.Forms.ToolTip toolTip1;

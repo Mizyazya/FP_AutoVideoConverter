@@ -37,6 +37,16 @@ namespace FP_Auto_Video_Converter_2
         Thread workingThread;
         Process ffmpeg = null;
 
+        // Кеш результатів проби апаратних кодерів на цій машині (null = проба ще триває).
+        static readonly Dictionary<EncoderKind, bool?> encoderAvailability = new Dictionary<EncoderKind, bool?>
+        {
+            { EncoderKind.Cpu, true },
+            { EncoderKind.Nvenc, null },
+            { EncoderKind.Qsv, null },
+        };
+        Thread nvencProbeThread;
+        Thread qsvProbeThread;
+
         private Stopwatch convertTime = new Stopwatch();  //convert time
         private Stopwatch upTime = new Stopwatch(); //app start
 
@@ -169,6 +179,15 @@ namespace FP_Auto_Video_Converter_2
             SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED);
             log("Комп’ютер не перейде в режим сну, поки працює ця програма.");
 
+            // Проба апаратних кодерів у фоні - не затримує старт вікна.
+            // CPU завжди доступний, тому пробуємо лише NVIDIA й Intel.
+            nvencProbeThread = new Thread(() => ProbeEncoderAsync(EncoderKind.Nvenc));
+            nvencProbeThread.IsBackground = true;
+            nvencProbeThread.Start();
+            qsvProbeThread = new Thread(() => ProbeEncoderAsync(EncoderKind.Qsv));
+            qsvProbeThread.IsBackground = true;
+            qsvProbeThread.Start();
+
             processArgumentsOnLoad();
 
             
@@ -189,8 +208,10 @@ namespace FP_Auto_Video_Converter_2
                     "\n\n -scaleN - Зняти галочку \"Зменшити роздільну здатність до\"." +
                     "\n\n -crf33 - Задати CRF=33 (або інше число)." +
                     "\n\n -preset4 - Задати preset=faster (або інший, число до 10)." +
-                    "\n\n -gpuY - Поставити галочку \"Використовувати GPU (NVIDIA NVENC)\"." +
-                    "\n\n -gpuN - Зняти галочку \"Використовувати GPU (NVIDIA NVENC)\"." +
+                    "\n\n -gpuY - Вибрати кодування NVIDIA GPU (NVENC), якщо доступне на цій машині." +
+                    "\n\n -gpuN - Вибрати кодування CPU." +
+                    "\n\n -qsvY - Вибрати кодування Intel GPU (QSV), якщо доступне на цій машині." +
+                    "\n\n -qsvN - Вибрати кодування CPU." +
                     "\n\n -clearResolution1080 - Очистити зі списку всі файли менші за 1080 по меншій стороні (або інше число)." +
                     "\n\n -clearBitrate10 - Очистити зі списку всі файли бітрейтом менше 10 мегабіт  (або інше число)." +
                     "\n\n -clearH265 - Очистити зі списку всі файли що вже в кодеку H265 (HEVC)." +
@@ -237,9 +258,13 @@ namespace FP_Auto_Video_Converter_2
                 if (preset <= trackBarPreset.Maximum && preset >= trackBarPreset.Minimum)
                     trackBarPreset.Value = preset;
             if (isArgument("-gpuY"))
-                checkBoxUseGpu.Checked = true;
+                SelectEncoderIfAvailable(EncoderKind.Nvenc);
             if (isArgument("-gpuN"))
-                checkBoxUseGpu.Checked = false;
+                radioButtonCpu.Checked = true;
+            if (isArgument("-qsvY"))
+                SelectEncoderIfAvailable(EncoderKind.Qsv);
+            if (isArgument("-qsvN"))
+                radioButtonCpu.Checked = true;
 
 
             // Перевірка, чи є адреса папки в аргументах
@@ -783,7 +808,9 @@ namespace FP_Auto_Video_Converter_2
             checkBoxSkipIfBigger.Enabled = active;
             textBoxScaleDownSmallerSide.Enabled = active;
             checkBoxScaleDown.Enabled = active;
-            checkBoxUseGpu.Enabled = active;
+            radioButtonCpu.Enabled = active;
+            radioButtonNvenc.Enabled = active;
+            radioButtonQsv.Enabled = active;
             buttonExit.Enabled = active;
             if (active)
             {
@@ -881,7 +908,7 @@ namespace FP_Auto_Video_Converter_2
                 log("Збір даних...");
                 int crf = trackBarCRF.Value;
                 getPresetInfo(trackBarPreset.Value, out string preset, out string description);
-                bool useGpu = checkBoxUseGpu.Checked;
+                EncoderKind encoderKind = GetSelectedEncoderKind();
                 string gpuPreset = getGpuPreset(trackBarPreset.Value);
                 bool reduceFramerate = checkBoxReduceFramerate.Checked;
                 int.TryParse(textBoxReduceFramerateValue.Text, out int reduceFramerateValue);
@@ -900,7 +927,7 @@ namespace FP_Auto_Video_Converter_2
                 }
 
                 log($"CRF = {crf}");
-                log($"useGpu = {useGpu}");
+                log($"encoderKind = {encoderKind}");
                 if(reduceFramerate)
                     log($"reduceFramerateValue = {reduceFramerateValue}");
                 log($"skipBigger = {skipBigger}");
@@ -911,7 +938,7 @@ namespace FP_Auto_Video_Converter_2
                 stop = false;
                 buttonStop.Enabled = true;
                 convertTime.Start();
-                workingThread = new Thread(() => runConvertAsync(crf, preset, useGpu, gpuPreset, reduceFramerate, reduceFramerateValue, skipBigger, downscale, downscaleSmallerSide));
+                workingThread = new Thread(() => runConvertAsync(crf, preset, encoderKind, gpuPreset, reduceFramerate, reduceFramerateValue, skipBigger, downscale, downscaleSmallerSide));
                 workingThread.Start();
             }
             catch (Exception ex)
@@ -920,7 +947,7 @@ namespace FP_Auto_Video_Converter_2
             }
         }
 
-        private void runConvertAsync(int crf, string preset, bool useGpu, string gpuPreset, bool reduceFramerate, int reduceFramerateValue, bool skipBigger, bool downscale, double targetSmallerSide)
+        private void runConvertAsync(int crf, string preset, EncoderKind encoderKind, string gpuPreset, bool reduceFramerate, int reduceFramerateValue, bool skipBigger, bool downscale, double targetSmallerSide)
         {
             try
             {
@@ -954,7 +981,7 @@ namespace FP_Auto_Video_Converter_2
 
                         //Стиснути відео в тимчасовий файл
                         double videoDuration = GetVideoDurationInSeconds(filePath);
-                        string resolution = "";
+                        List<string> vfFilters = new List<string>();
                         if (downscale && smallerSide > targetSmallerSide)
                         {
                             double scaleFactor = targetSmallerSide / smallerSide; //less 1
@@ -970,13 +997,15 @@ namespace FP_Auto_Video_Converter_2
                                 newWidth = newHeight;
                                 newHeight = temp;
                             }
-                            resolution = $"-vf \"scale={newWidth}:{newHeight}\" ";
+                            vfFilters.Add($"scale={newWidth}:{newHeight}");
                         }
+                        if (EncoderSettings.NeedsPixelFormatFix(encoderKind))
+                            vfFilters.Add(EncoderSettings.PixelFormatFixFilter);
+                        string resolution = vfFilters.Count > 0 ? $"-vf \"{string.Join(",", vfFilters.ToArray())}\" " : "";
+
                         string framerate = reduceFramerate? $"-r {reduceFramerateValue} " : "";
-                        string hwaccel = useGpu ? "-hwaccel cuda " : "";
-                        string videoCodec = useGpu
-                            ? $"-c:v hevc_nvenc -preset {gpuPreset} -tune hq -rc vbr -cq {crf} -b:v 0"
-                            : $"-c:v libx265 -preset {preset} -crf {crf}";
+                        string hwaccel = EncoderSettings.GetHwaccelPrefix(encoderKind);
+                        string videoCodec = EncoderSettings.BuildVideoCodecArgs(encoderKind, crf, preset, gpuPreset);
                         string arguments = $"{hwaccel}-i \"{filePath}\" {videoCodec} {framerate}{resolution}-progress pipe:1 \"{tmpfile}\"";
                         string exe = "ffmpeg.exe";
                         log(exe + " " + arguments);
@@ -994,10 +1023,16 @@ namespace FP_Auto_Video_Converter_2
                                 {
                                     log(args.Data);
                                     string timeStr = args.Data.Split('=')[1].Split(' ')[0]; //Парсимо поточний Час у форматі hh:mm:ss.xx
-                                    TimeSpan currentTime = TimeSpan.Parse(timeStr);
-                                    double percentage = (currentTime.TotalSeconds / videoDuration) * 100;
-                                    status($"Прогрес файлу: {percentage:F2}%");
-                                    updateStats();
+                                    // На перших кадрах (буфер/lookahead кодека) ffmpeg іноді видає від'ємний
+                                    // time= (напр. "-00:00:00.03") - TimeSpan.Parse на такому падає з
+                                    // необробленим винятком у фоновому потоці, що аварійно завершує програму.
+                                    // TryParse замість Parse - пропускаємо один кадр прогресу, не падаємо.
+                                    if (TimeSpan.TryParse(timeStr, out TimeSpan currentTime))
+                                    {
+                                        double percentage = (currentTime.TotalSeconds / videoDuration) * 100;
+                                        status($"Прогрес файлу: {percentage:F2}%");
+                                        updateStats();
+                                    }
                                 }
                             }
                         };
@@ -1273,11 +1308,109 @@ namespace FP_Auto_Video_Converter_2
             labelPresetMeaning.Text = description;
         }
 
-        private void checkBoxUseGpu_CheckedChanged(object sender, EventArgs e)
+        EncoderKind GetSelectedEncoderKind()
         {
-            labelEncoderMeaning.Text = checkBoxUseGpu.Checked
-                ? "GPU (hevc_nvenc): значно швидше, потребує NVIDIA GPU з підтримкою NVENC."
-                : "CPU (libx265): повільніше, але без обмежень до якості/сумісності.";
+            if (radioButtonNvenc.Checked) return EncoderKind.Nvenc;
+            if (radioButtonQsv.Checked) return EncoderKind.Qsv;
+            return EncoderKind.Cpu;
+        }
+
+        private void radioButtonEncoder_CheckedChanged(object sender, EventArgs e)
+        {
+            switch (GetSelectedEncoderKind())
+            {
+                case EncoderKind.Nvenc:
+                    labelEncoderMeaning.Text = "NVIDIA GPU (hevc_nvenc): значно швидше, потребує підтримки NVENC.";
+                    break;
+                case EncoderKind.Qsv:
+                    labelEncoderMeaning.Text = "Intel GPU (hevc_qsv): значно швидше, потребує підтримки Quick Sync.";
+                    break;
+                default:
+                    labelEncoderMeaning.Text = "CPU (libx265): повільніше, але без обмежень до якості/сумісності.";
+                    break;
+            }
+        }
+
+        // Пробує реально закодувати 1 кадр через апаратний кодер і перевіряє, чи запрацювало.
+        // Запускається у фоновому потоці з Form1_Load, щоб не затримувати старт вікна.
+        void ProbeEncoderAsync(EncoderKind kind)
+        {
+            bool available = false;
+            string debugInfo = "";
+            try
+            {
+                string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+                Process probe = new Process();
+                probe.StartInfo.FileName = Path.Combine(baseDir, "ffmpeg.exe");
+                probe.StartInfo.Arguments = EncoderSettings.GetProbeArguments(kind);
+                probe.StartInfo.WorkingDirectory = baseDir;
+                probe.StartInfo.UseShellExecute = false;
+                probe.StartInfo.CreateNoWindow = true;
+                probe.StartInfo.RedirectStandardOutput = true;
+                probe.StartInfo.RedirectStandardError = true;
+                probe.Start();
+                string stderr = probe.StandardError.ReadToEnd();
+                bool finished = probe.WaitForExit(4000);
+                if (!finished)
+                {
+                    try { probe.Kill(); } catch { }
+                    available = false;
+                    debugInfo = "timeout";
+                }
+                else
+                {
+                    available = probe.ExitCode == 0;
+                    debugInfo = $"exitCode={probe.ExitCode} stderr={stderr}";
+                }
+            }
+            catch (Exception ex)
+            {
+                available = false;
+                debugInfo = "exception: " + ex.Message;
+            }
+            // Спершу записуємо результат, і лише потім чіпаємо UI. Це важливо: коли пробу
+            // очікують через Join() (SelectEncoderIfAvailable, CLI-автоматизація), UI-потік
+            // заблокований — якби ми чіпали UI (через Invoke) РАНІШЕ за цей запис, вийшов би
+            // deadlock (UI чекає на потік проби, потік проби чекає на Invoke до UI).
+            encoderAvailability[kind] = available;
+            log($"{kind}: {(available ? "доступний" : "недоступний")}" + (debugInfo.Length > 0 && !available ? $" ({debugInfo})" : ""));
+            if (available)
+                RevealEncoderOption(kind);
+        }
+
+        // Використовується лише з CLI-прапорців (-gpuY/-qsvY) для автоматизації через BAT.
+        // На відміну від звичайного інтерактивного старту, тут свідомо чекаємо (обмежено) на
+        // пробу заліза - інакше швидкий автоматизований запуск міг би тихо впасти на CPU,
+        // навіть якщо потрібне апаратне кодування насправді доступне.
+        void SelectEncoderIfAvailable(EncoderKind kind)
+        {
+            Thread probeThread = kind == EncoderKind.Nvenc ? nvencProbeThread : qsvProbeThread;
+            probeThread?.Join(4500);
+
+            if (encoderAvailability.TryGetValue(kind, out bool? avail) && avail == true)
+            {
+                RadioButton rb = kind == EncoderKind.Nvenc ? radioButtonNvenc : radioButtonQsv;
+                rb.Visible = true;
+                rb.Checked = true;
+            }
+            else
+            {
+                log($"Аргумент запросив {kind}, але цей енкодер недоступний на цій машині. Залишено CPU.");
+            }
+        }
+
+        void RevealEncoderOption(EncoderKind kind)
+        {
+            RadioButton rb = kind == EncoderKind.Nvenc ? radioButtonNvenc : radioButtonQsv;
+            // BeginInvoke (не Invoke) навмисно: якщо UI-потік у цю мить чекає в Join()
+            // (SelectEncoderIfAvailable), синхронний Invoke тут заблокував би обидва потоки
+            // назавжди. BeginInvoke лише ставить виклик у чергу й не чекає на відповідь.
+            if (rb.InvokeRequired)
+            {
+                rb.BeginInvoke(new MethodInvoker(() => RevealEncoderOption(kind)));
+                return;
+            }
+            rb.Visible = true;
         }
 
         // NVENC-пресети (p1..p7) не збігаються з x264/x265-пресетами.
@@ -1445,7 +1578,7 @@ namespace FP_Auto_Video_Converter_2
 
         private void buttonAbout_Click(object sender, EventArgs e)
         {
-            string description = "FP AutoVideoConverter 2.6" +
+            string description = "FP AutoVideoConverter 2.7" +
                 "\n" +
                 "\nЦя програма дозволяє автоматизувати процес стиснення відеофайлів у кодек H.265 (HEVC), " +
                 "надаючи зручний інтерфейс для пакетного стиснення великої кількості відео." +
@@ -1594,4 +1727,14 @@ namespace FP_Auto_Video_Converter_2
 - В інтерфейсі додано перемикач "Використовувати GPU (NVIDIA NVENC)"
 - Додано аргументи командного рядка -gpuY / -gpuN
 - Оновлено ffmpeg.exe до версії 8.1.2 (gyan.dev full build) - стара збірка 2016 року не мала NVENC/CUDA
+
+2.7
+- Додано підтримку Intel Quick Sync Video (QSV) як третій варіант кодування поруч з CPU/NVIDIA
+- Перемикач замінено з чекбоксу на 3 радіокнопки (CPU/NVIDIA GPU/Intel GPU), перенесено нагору панелі налаштувань
+- Додано автовизначення заліза при старті - показуються лише ті варіанти, що реально працюють на цій машині (без потреби в правах адміністратора; перевірка пробним кодуванням, а не через WMI)
+- Логіка кожного кодера винесена в окремий файл EncoderSettings.cs - додати новий варіант (напр. AMD AMF) у майбутньому можна без змін в іншому коді
+- Виправлено баг: hevc_nvenc падав (0 байт) на 4:2:2-джерелах (напр. ProRes) - тепер формат пікселів нормалізується перед кодуванням, з збереженням 10-біт HDR де він є
+- Виправлено deadlock, через який -gpuY міг тихо відкочуватись на CPU при автоматизованому запуску
+- Виправлено крах програми при від'ємному time= у виводі ffmpeg (буває на перших кадрах при кодуванні з B-кадрами)
+- Додано аргументи командного рядка -qsvY / -qsvN
  */
